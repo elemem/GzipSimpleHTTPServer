@@ -121,6 +121,11 @@ class SimpleHTTPRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
             else:
                 return self.list_directory(path).read()
         ctype = self.guess_type(path)
+        if ctype == 'video/mpegts':
+            encoding_type = None
+        elif ctype == 'application/vnd.apple.mpegurl':
+            encoding_type = 'utf-8'
+
         try:
             # Always read in binary mode. Opening files in text mode may cause
             # newline translations, making the actual size of the content
@@ -131,7 +136,8 @@ class SimpleHTTPRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
             return None
         self.send_response(200)
         self.send_header("Content-type", ctype)
-        self.send_header("Content-Encoding", encoding_type)
+        if encoding_type:		
+            self.send_header("Content-Encoding", encoding_type)
         fs = os.fstat(f.fileno())
         raw_content_length = fs[6]
         content = f.read()
@@ -143,6 +149,8 @@ class SimpleHTTPRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
             content = deflate_encode(content)
         elif encoding_type == "zlib":
             content = zlib_encode(content)
+        else:
+            pass
 
         compressed_content_length = len(content)
         f.close()
@@ -247,6 +255,8 @@ class SimpleHTTPRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
         '.py': 'text/plain',
         '.c': 'text/plain',
         '.h': 'text/plain',
+        '.ts': 'video/mpegts',
+        '.m3u8': 'application/vnd.apple.mpegurl',
         })
 
 
